@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (
     CreateBookingItemView, UpdateBookingItemView, BookingItemListView,
-    ConfirmBookingView, BookingListView, BookingDetailView, generate_ticket, download_ticket, verify_ticket
+    ConfirmBookingView, BookingListView, BookingDetailView, generate_ticket, download_ticket, verify_ticket, process_commission, transaction_history, process_refund
 )
 
 urlpatterns = [
@@ -19,4 +19,10 @@ urlpatterns = [
     path('<int:booking_id>/generate-ticket/', generate_ticket, name='generate-ticket'),
     path('<int:booking_id>/download-ticket/', download_ticket, name='download-ticket'),
     path('verify-ticket/', verify_ticket, name='verify-ticket'),
+
+    # Transactions
+    path('<int:booking_id>/commission/', process_commission, name='process-commission'),
+    path('<int:booking_id>/refund/', process_refund, name='process-refund'),
+    path('transactions/', transaction_history, name='transaction-history'),
+
 ]
