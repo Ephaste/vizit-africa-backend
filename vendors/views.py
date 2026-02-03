@@ -8,7 +8,6 @@ from .serializers import VendorSerializer
 from .permissions import IsVendorOwner
 
 
-# Create your views here.
 class VendorViewSet(ModelViewSet):
     serializer_class = VendorSerializer
     permission_classes = [IsAuthenticated, IsVendorOwner]
@@ -20,12 +19,6 @@ class VendorViewSet(ModelViewSet):
     
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
-
-
-        #admin approval endpoint
-
-    class VendorViewSet(ModelViewSet):
-        ...
 
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def approve(self, request, pk=None):

@@ -1,5 +1,5 @@
 from rest_framework.serializers import ModelSerializer
-from.models import Vendor
+from .models import Vendor
 
 
 class VendorSerializer(ModelSerializer):
