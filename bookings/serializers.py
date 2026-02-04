@@ -8,7 +8,7 @@ class BookingItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = BookingItem
         fields = [
-            'id', 'service_id', 'start_date', 'end_date', 'quantity', 
+            'id', 'service', 'start_date', 'end_date', 'quantity', 
             'unit_price', 'subtotal', 'status', 'created_at'
         ]
         read_only_fields = ['subtotal', 'created_at']

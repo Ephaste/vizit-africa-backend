@@ -25,7 +25,15 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, attrs):
-        if attrs.get("password") != attrs.get("re_password"):
+        password = attrs.get("password")
+        re_password = attrs.get("re_password")
+        
+        if not password or not re_password:
+            raise serializers.ValidationError(
+                {"password": "Password fields are required"}
+            )
+            
+        if password != re_password:
             raise serializers.ValidationError(
                 {"password": "Passwords do not match"}
             )

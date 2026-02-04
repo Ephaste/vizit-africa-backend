@@ -33,7 +33,8 @@ class UserViewSet(viewsets.ModelViewSet):
         return super().get_permissions()
 
     def list(self, request, *args, **kwargs):
-        serializer = self.get_serializer(self.queryset, many=True)
+        queryset = self.get_queryset().only('id', 'full_name', 'email', 'role', 'created_at')
+        serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["get"])

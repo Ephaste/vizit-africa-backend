@@ -1,14 +1,20 @@
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import Service, ServiceMedia, ServiceAvailability, Discount
 from .serializers import ServiceSerializer, ServiceMediaSerializer, ServiceAvailabilitySerializer, DiscountSerializer
 from .permissions import IsApprovedVendor
 
 class ServiceViewSet(ModelViewSet):
     serializer_class = ServiceSerializer
-    permission_classes = [IsAuthenticated, IsApprovedVendor]
+    
+    def get_permissions(self):
+        if self.action == 'list' or self.action == 'retrieve':
+            return [AllowAny()]
+        return [IsAuthenticated(), IsApprovedVendor()]
 
     def get_queryset(self):
+        if self.action == 'list' or self.action == 'retrieve':
+            return Service.objects.filter(status='active')
         return Service.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):

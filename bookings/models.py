@@ -29,8 +29,12 @@ class BookingItem(models.Model):
         ordering = ['-created_at']
     
     def save(self, *args, **kwargs):
-        self.subtotal = self.unit_price * self.quantity
-        super().save(*args, **kwargs)
+        try:
+            if self.unit_price and self.quantity:
+                self.subtotal = self.unit_price * self.quantity
+            super().save(*args, **kwargs)
+        except Exception as e:
+            raise ValueError(f"Error saving booking item: {str(e)}")
 
 class Booking(models.Model):
     STATUS_CHOICES = [

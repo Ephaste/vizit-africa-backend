@@ -47,26 +47,32 @@ class ConfirmBookingView(generics.CreateAPIView):
     
     @transaction.atomic
     def create(self, request, *args, **kwargs):
-        draft_items = BookingItem.objects.filter(user=request.user, status='draft')
-        
-        if not draft_items.exists():
-            return Response(
-                {'error': 'No draft booking items found'}, 
-                status=status.HTTP_400_BAD_REQUEST
+        try:
+            draft_items = BookingItem.objects.filter(user=request.user, status='draft')
+            
+            if not draft_items.exists():
+                return Response(
+                    {'error': 'No draft booking items found'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Create booking
+            booking = Booking.objects.create(
+                user=request.user,
+                total_amount=sum(item.subtotal for item in draft_items),
+                currency='USD'
             )
-        
-        # Create booking
-        booking = Booking.objects.create(
-            user=request.user,
-            total_amount=sum(item.subtotal for item in draft_items),
-            currency='USD'
-        )
-        
-        # Update items
-        draft_items.update(booking=booking, status='reserved')
-        
-        serializer = self.get_serializer(booking)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+            # Update items
+            draft_items.update(booking=booking, status='reserved')
+            
+            serializer = self.get_serializer(booking)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response(
+                {'error': 'Failed to create booking'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class BookingListView(generics.ListAPIView):
     serializer_class = BookingSerializer
@@ -136,21 +142,28 @@ def download_ticket(request, booking_id):
         if not ticket.pdf_url:
             return Response({'error': 'Ticket PDF not generated yet'}, status=status.HTTP_400_BAD_REQUEST)
         
-        # Extract file path from URL
-        pdf_path = ticket.pdf_url.split('/media/')[-1]
+        # Extract file path from URL safely
+        try:
+            pdf_path = ticket.pdf_url.split('/media/')[-1]
+        except (IndexError, AttributeError):
+            return Response({'error': 'Invalid ticket URL'}, status=status.HTTP_400_BAD_REQUEST)
         
         if not default_storage.exists(pdf_path):
             return Response({'error': 'Ticket file not found'}, status=status.HTTP_404_NOT_FOUND)
         
         # Serve the file
-        file_content = default_storage.open(pdf_path).read()
-        response = HttpResponse(file_content, content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="ticket_{booking.id}.pdf"'
-        
-        return response
+        try:
+            file_content = default_storage.open(pdf_path).read()
+            response = HttpResponse(file_content, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="ticket_{booking.id}.pdf"'
+            return response
+        except Exception:
+            return Response({'error': 'Failed to read ticket file'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
     except Booking.DoesNotExist:
         return Response({'error': 'Booking not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception:
+        return Response({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['POST'])
@@ -226,6 +239,8 @@ def process_commission(request, booking_id):
         
     except Booking.DoesNotExist:
         return Response({'error': 'Booking not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception:
+        return Response({'error': 'Failed to process commission'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])
