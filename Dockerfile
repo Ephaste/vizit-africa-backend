@@ -16,7 +16,7 @@ RUN pip install --no-cache-dir gunicorn
 
 COPY . .
 
-# RUN python manage.py collectstatic --noinput || echo "Collectstatic failed, continuing..."
+RUN python manage.py collectstatic --noinput || echo "Collectstatic failed, continuing..."
 
 
 EXPOSE 8000
