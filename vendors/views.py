@@ -13,7 +13,7 @@ class VendorViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated, IsVendorOwner]
 
     def get_queryset(self):
-        if self.request.user.role == 'admin':
+        if self.request.user and self.request.user.role == 'admin':
             return Vendor.objects.all()
         return Vendor.objects.filter(user=self.request.user)
     
