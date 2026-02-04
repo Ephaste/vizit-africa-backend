@@ -28,7 +28,7 @@ db.sqlite3
 media/
 staticfiles/
 # Local media & static files
-/static/
+# /static/
 /media/
 
 # ----------------------
