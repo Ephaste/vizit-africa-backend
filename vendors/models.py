@@ -8,3 +8,6 @@ class Vendor(models.Model):
     is_approved = models.BooleanField(default=False)
     approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="approved_vendors")
     approved_on = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.business_name} ({self.vendor_type})"

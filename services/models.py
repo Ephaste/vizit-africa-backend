@@ -1,14 +1,13 @@
 from django.db import models
 from django.conf import settings
-from vendors.models import Vendor
-from locations.models import Location
+
 
 # Create your models here.
 
 
 class Service(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    location = models.ForeignKey(Location, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='services')
+    location = models.ForeignKey('locations.Location', on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
     service_type = models.CharField(max_length=50)
     description = models.TextField()
@@ -18,12 +17,18 @@ class Service(models.Model):
     status = models.CharField(max_length=20)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return self.title
+
 
 class ServiceMedia(models.Model):
     service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name='media')
     media_url = models.URLField()
     media_type = models.CharField(max_length=10)  # 'image', 'video'
     sort_order = models.IntegerField(default=0)
+
+    def __str__(self):
+        return f"{self.service.title} - {self.media_type} #{self.sort_order}"
 
 
 class ServiceAvailability(models.Model):
@@ -34,8 +39,9 @@ class ServiceAvailability(models.Model):
     price_override = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     is_blocked = models.BooleanField(default=False)
 
+    def __str__(self):
+        return f"{self.service.title} ({self.start_date} to {self.end_date})"
 
-  
 
 class Discount(models.Model):
     vendor = models.ForeignKey('vendors.Vendor', on_delete=models.SET_NULL, null=True, blank=True)
@@ -48,3 +54,6 @@ class Discount(models.Model):
     end_date = models.DateTimeField()
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.code} - {self.name}"
