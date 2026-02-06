@@ -8,6 +8,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from accounts.models import User
 from accounts.serializers import (
     UserRegisterSerializer,
+    VerifyEmailSerializer,
     CustomTokenObtainPairSerializer,
 )
 from accounts.permissions import IsAdmin
@@ -16,9 +17,10 @@ from accounts.permissions import IsAdmin
 class UserViewSet(viewsets.ModelViewSet):
     """
     Endpoints:
-    - POST /api/users/           → Register (public)
-    - GET  /api/users/           → List users (admin only)
-    - GET  /api/users/profile/   → Logged-in user profile
+    - POST /api/accounts/users/           → Register
+    - GET  /api/accounts/users/           → List users (admin)
+    - GET  /api/accounts/users/profile/   → Logged-in profile
+    - POST /api/accounts/users/verify_email/ → Activate account
     """
 
     queryset = User.objects.all()
@@ -33,7 +35,9 @@ class UserViewSet(viewsets.ModelViewSet):
         return super().get_permissions()
 
     def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset().only('id', 'full_name', 'email', 'role', 'created_at')
+        queryset = self.get_queryset().only(
+            "id", "full_name", "email", "role", "created_at"
+        )
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -47,11 +51,30 @@ class UserViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-   
+
+    @action(detail=False, methods=["post"], permission_classes=[AllowAny])
+    def verify_email(self, request):
+        serializer = VerifyEmailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = serializer.validated_data["user"]
+        verification = serializer.validated_data["verification"]
+
+        user.is_active = True
+        user.save()
+
+        verification.is_used = True
+        verification.save()
+
+        return Response(
+            {"message": "Account activated successfully"},
+            status=status.HTTP_200_OK,
+        )
+
 
 class LoginViewSet(TokenObtainPairView):
     """
-    POST /api/login/
+    POST /api/accounts/login/
     """
     serializer_class = CustomTokenObtainPairSerializer
     permission_classes = [AllowAny]

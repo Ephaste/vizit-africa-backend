@@ -7,6 +7,9 @@ from django.contrib.auth.models import (
     PermissionsMixin,
 )
 from django.core.validators import MinLengthValidator, MaxLengthValidator
+import datetime
+from django.utils import timezone
+
 
 
 # ===================================================
@@ -71,7 +74,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         default="USD",
     )
 
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -83,5 +86,31 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+
+
+class VerificationCode(models.Model):
+    SIGNUP = "SIGNUP"
+
+    PURPOSE_CHOICES = [
+        (SIGNUP, "Signup"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        "User", on_delete=models.CASCADE, related_name="verification_codes"
+    )
+    code = models.CharField(max_length=6)
+    purpose = models.CharField(max_length=30, choices=PURPOSE_CHOICES)
+    is_used = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "code")
+
+    @property
+    def is_valid(self):
+        expiry_time = self.created_at + datetime.timedelta(minutes=10)
+        return timezone.now() < expiry_time and not self.is_used
 
 
